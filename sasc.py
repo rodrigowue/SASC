@@ -108,14 +108,16 @@ def main():
 	f=open(file,"r");
 	ntransistors=[]; #Start List for N Transistors
 	ptransistors=[]; #Start List for P Transistors
-	inandout=[]; #Start List for P Transistors
-	outputs=[];  #Start List for P Transistors
+	inputs=[]; #Start List for Inputs
+	outputs=[];  #Start List for Output Nodes
 	for line in f:
 		newline = line.rstrip('\n');
 		#Check if the line starts with *.pininfo
 		if "*.pininfo" in newline.lower():
 			#Fetches Outputs from the pininfo line
 			outpins = re.findall('[a-zA-Z0-9]*:[Oo]', newline);
+			#Fetches Inputs from the pininfo line
+			inpins = re.findall('[a-zA-Z0-9]*:[Ii]', newline);
 			#Fetches Vdd pin from the pininfo line
 			vddpin = str(re.search('[a-zA-Z0-9]*:[Pp]', newline)[0]);
 			#Fetches Gnd pin from the pininfo line
@@ -127,19 +129,26 @@ def main():
 				for out in outpins:
 					print("Output Pins:",out);
 					outputs.append(out.replace(':O',''));
+			#Check if its missing output pins
+			if is_empty(inpins):
+				print("pattern not found outputs");
+			else:
+				for in_pin in inpins:
+					print("input Pins:",in_pin);
+					inputs.append(in_pin.replace(':O',''));
 			#Check if its missing vdd pins
 			if is_empty(vddpin):
 				print("pattern not found outputs");
 				return -3;
 			else:
-				print("Circuit Power Pin:", vddpin);
+				print("Circuit Supply Pin:", vddpin);
 				vddpin=vddpin.replace(':P','');
 			#Check if its missing gnd pins
 			if is_empty(gndpin):
 				print("pattern not found outputs");
 				return -3;
 			else:
-				print("Circuit Power Pin:", gndpin);
+				print("Circuit Ground Pin:", gndpin);
 				gndpin=gndpin.replace(':G','');
 				
 		#===========================================================================
@@ -245,12 +254,29 @@ def main():
 		node_size.append(100);
 
 	#===========================================================================
-	#Searches Euler Paths from OUT to VDD
+	#Fetches Common Nodes
 	#===========================================================================
-	for outpin in outputs:
-		print("PATH FROM",outpin ,"TO",vddpin);
+	common_nodes=[];
+	for n in ntransistors:
+		for p in ptransistors:
+			if (n.get_drain()==p.get_drain()):
+				common_nodes.append(n.get_drain());
+			elif (n.get_drain()==p.get_source()):
+				common_nodes.append(n.get_drain());
+			elif (n.get_source()==p.get_drain()):
+				common_nodes.append(n.get_source());
+			elif (n.get_source()==p.get_source()):
+				common_nodes.append(n.get_source());
+
+	common_nodes = list(dict.fromkeys(common_nodes));
+
+	#===========================================================================
+	#Searches Euler Paths from COMMON_NODE to VDD
+	#===========================================================================
+	for common_node in common_nodes:
+		print("PATH FROM",common_node ,"TO",vddpin);
 		print("============================================================");
-		for path in nx.all_simple_paths(G, source=outpin, target=vddpin):
+		for path in nx.all_simple_paths(G, source=common_node, target=vddpin):
 			nodes_path_p=[];
 			stack=0;
 			if not(gndpin) in path: 
@@ -266,12 +292,12 @@ def main():
 			print("============================================================");
 
 	#===========================================================================
-	#Searches Euler Paths from OUT to VSS
+	#Searches Euler Paths from COMMON_NODE to VSS
 	#===========================================================================
-	for outpin in outputs:
-		print("PATH FROM",outpin ,"TO",gndpin);
+	for common_node in common_nodes:
+		print("PATH FROM",common_node ,"TO",gndpin);
 		print("============================================================");
-		for path in nx.all_simple_paths(G, source=outpin, target=gndpin):
+		for path in nx.all_simple_paths(G, source=common_node, target=gndpin):
 			nodes_path_n=[];
 			stack=0;
 			if not(vddpin) in path: 
