@@ -1,5 +1,5 @@
 # [SASC] SPICE Automatic Stack Calculator
-This tool parses a SPICE description and turns them into a transistor object list, one list for Pull-Down Network (PDN) and one for Pull-Up Network (PUN). A node graph is generated and them the tool finds Eulerian Paths, between PDN and PUN common nodes and the VDD and VSS rails, to calculate the Stack Factor and properly size transistor widths. 
+This tool parses a SPICE description and turns them into a transistor object list, one list for Pull-Down Network (PDN) and one for Pull-Up Network (PUN). A node graph is generated and them the tool finds Eulerian Paths, between PDN and PUN common nodes to the VDD and VSS rails, to calculate the Stack Factor and properly size transistor widths. 
 
 >python3 sasc.py [Wpmos/Wnmos Ratio] [Input SPICE]
 
